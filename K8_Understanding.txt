@@ -1,0 +1,302 @@
+Links:
+https://crishantha.medium.com/running-minikube-on-aws-ec2-e845337a956
+https://josephcardillo.medium.com/how-to-create-and-edit-kubernetes-yaml-files-on-the-fly-30fd1b1d78f8
+
+Kubernetes Details:
+
+Example:
+
+Node1 contains:
+-	My App
+-	DB
+
+Node2 contains:
+-	My App
+-	DB
+
+
+My App
+-	service
+-	deployment (for stateless applications)
+
+DB
+-	service
+-	statefulset (for databases)
+
+Services:
+-	services maintain stable IP address. It means when any POD dies, there is no problem in accessing the new POD as PODs
+	are connected to the service
+-	Client -> Service gets the request -> service forwards the requests to all the PODs
+-	Service uses load balancing
+	- clusterIP
+		-	Service <-> POD communication happens using the SELECTOR attribute from the yaml file
+		- 	servicePort can be any
+		-	targetPort has to be the POD port
+	- Headless Service
+		- Client wants to communicate with one specific POD. Example is master DB.
+		- POD wants to talk directly with another POD
+
+Kubernetes cluster contains (Node Process):
+-	Container runtime
+-	kubctl
+	-	Interacts with Node and containers
+	-	kubctl starts the pod with container inside.
+- 	Kube Proxy
+	-	Forwards the requests between the Nodes
+
+MASTER NODE PROCESS:
+-	4 Processes run on every master node5) 
+	- API Server
+	- Scheduler
+	- Controller Manager
+	- etcd
+
+Stateful Applications:
+-	Databases which stores data
+- 	Database use persistent volume which means each pod has it's one volume.
+-	Pod with read/write access is called Master
+-	Pods with only read access is called worker
+-	Continuous synchronizing in place between pods so if any one goes down, another one gets created
+
+Stateless Applications:
+-	Dont keep records of interaction
+- 	each request is completely new
+
+Client -> API Server:
+- Cluster gateway
+- gatekeeper for authentication
+- To deploy new PODS/Nodes
+	- talk to the API server
+	- validate request
+	- forward the request to other process to schedule any new PODs
+
+Client -> API Server -> Scheduler:
+- where to put the next POD
+- scheduler decides on which node new POD to be scheduled based on load
+
+Client -> API Server -> Controller Manager
+- detects cluster state changes
+- Like when PODs die, controller will make a request to scheduler
+
+Client -> API Server -> Scheduler -> Controller Manager -> etcd
+- key/value pair of cluster state is stored here
+- actual application data is not stored here
+
+======================================================================================
+Installation:
+
+1) brew install hyperkit
+2) brew install minikube
+3) kubectl
+4) minikube
+
+Create a cluster:
+
+- minikube start --vm-driver=hyperkit
+
+Get minikube status:
+- minikube status
+
+Kubectl commands:
+- kubectl get nodes
+- kubectl version
+- kubectl get pod
+- kubectl get services
+
+Create a NGINX deployment
+- kubectl create deployment nginx-depl --image=nginx
+
+Editing deployment image
+- kubectl edit deployment nginx-depl
+- change the image version
+- kubectl get pod
+	- old pod will terminate and new pod will get created
+	
+
+Describe and Log
+- kubectl logs mongo-depl-558475c797-mgk9c
+
+- kubectl describe pod mongo-depl-558475c797-mgk9c
+
+
+- kubectl exec -it mongo-depl-558475c797-mgk9c -- bin/bash
+
+Deployment file
+
+- kubectl apply -f nginx-depl.yaml
+
+============================================================================================
+2 configuration files:
+
+nginx-deployment.yaml
+-	metadata
+- 	specification
+- 	status
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        
+nginx-service.yaml
+-	label
+- 	selector
+- 	port
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+spec:
+  selector:
+    app: mongodb
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+
+
+To check service details
+-	kubectl get service nginx-service
+
+To get IP address of the POD
+-	kubectl get pod -o wide
+
+How to get the status
+-	kubectl get deployment nginx-deployment -o yaml > nginx-deployment-result.yaml
+
+
+How to watch pod status
+- kubectl get pod --watch
+
+=============================================================================================
+How to create base64 secret
+
+- echo -n 'username' | base64
+- echo -n 'password' | base64
+=============================================================================================
+To call the external ip
+
+- minikube service mongo-express-service
+
+How to get configmap
+-	kubectl get configmap -n default
+
+How to delete configmap
+-	kubectl delete configmap mysql-configmap
+
+How to create namespace
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+  labels:
+    name: development
+
+-	kubectl apply -f namespace-dev.yaml
+
+create a configmap under namespace
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-configmap
+  namespace: development
+data:
+  db_url: mysql-service.database
+
+- kubectl get namespaces
+- kubectl apply -f mysql-configmap.yaml
+- kubectl get configmap -n development
+
+===============================================================================
+https://kubernetes.io/docs/tasks/administer-cluster/namespaces-walkthrough/
+
+How to create namespace, context, deployment
+- kubectl create -f namespace-prod.yaml
+- kubectl create -f namespace-dev.yaml
+- kubectl get namespaces --show-labels
+- kubectl config get-contexts
+- kubectl config current-context
+- kubectl config view
+- kubectl config set-context prod --namespace=production --cluster=minikube --user=minikube
+- kubectl config set-context dev --namespace=development --cluster=minikube --user=minikube
+- kubectl config view
+- kubectl config use-context dev
+- kubectl apply -f snowflak-depl.yaml
+- kubectl get pods -l app=snowflake
+- kubectl get pods --namespace=development
+
+==================================================================
+Ingress:
+
+- kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+- kubectl get all -n kubernetes-dashboard
+- kubectl get pods -n kubernetes-dashboard
+
+Service use:
+
+- kubectl get endpoints
+- kubectl get svc
+
+Node Status:
+- kubectl describe node ip-172-31-87-65
+
+==================================================================POD*LABEL*SELECTOR*RC=====================
+How to command in POD:
+
+- kubectl exec testpod2 -c cont01 -- /etc/os-release
+- kubectl exec testpod2 -c cont01 -- hostname -i
+- kubectl exec testpod2 -c cont02 -- date
+
+How to check the environment variable defined in the container of the pod
+- kubectl exec testpod1 -c cont05 -- env
+- kubectl exec testpod1 -c cont05 -- printenv | grep -i Myname
+- kubectl exec testpod1 -c cont05 -- sh -c 'echo $Myname'
+
+How to check Replication Controller:
+
+- kubectl apply -f replica.yml
+- kubectl get rc
+- kubectl describe rc myreplica
+- kubectl get pods -o wide
+- kubectl get rc --show-labels
+- kubectl get pods --show-labels
+- kubectl delete pod myreplica-5swjd
+- watch kubectl get pods
+- kubectl describe rc myreplica
+
+How to scale replicas:
+- kubectl scale --replicas=5 rc -l myname=RCTest
+- watch kubectl get pods
+- kubectl get pod --watch
+
+
+How to get into container:
+- kubectl exec testpod2 -it -c cont02 -- /bin/bash
+
+Some NETWORKING COMMANDS
+  514  sudo ufw enable
+  515  ufw status verbose
+  516  netstat -plunt
+  517  kubectl delete pod testcont
+  518  sudo ufw allow 80
+  519  ufw status verbose
+  

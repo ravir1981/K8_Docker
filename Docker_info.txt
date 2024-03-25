@@ -1,0 +1,140 @@
+Docker on Amazon Linux:
+
+- yum update -y
+- yum install docker -y
+- systemctl start docker
+- systemctl status docker
+
+How to pull image:
+- docker pull ubuntu
+- docker pull ubuntu:18.04
+
+How to check container folder:
+- cd /var/lib/docker/conatainers
+- *.log file will be there to check
+
+How to run a image with custom name:
+- docker run --name cont1 ubuntu
+- docker rename cont1 cont2
+- docker run --name n1 nginx (this is running process, to check use another window and execute docker container ls)
+- docker run --name ubuntu -it ubuntu (this will take me into the container)
+
+How to run a nginx container with the port accessible and detached mode
+- docker run -it --rm -d -p 8080:80 --name n2 nginx (configure the security group to allow port 8080 and use the ec2 public ip to connect)
+- docker run -d --name ng2 -p 8080:80 nginx
+- docker run --name ng1 -d nginx (detached mode)
+
+How to take any port and bind it to the container. This option is usefull when multiple container needs to be created
+- docker run -d --name http1 -P httpd
+- docker ps -a (to get the port number)
+- update the index.html in /usr/local/apache2/htdocs
+
+http://54.209.76.56:32768/ (how to reach)
+
+How to get into the container:
+- docker exec -it ng1 bash
+
+How to execute a command in a container from Docker host
+- docker exec ng1 cat /etc/os-release
+- docker exec ng1 pwd;ls -ltr;date
+
+How to remove image name:
+- docker rmi ubuntu:18.04
+
+How to remove image: 
+- docker rmi d2c94e258dcb
+- docker rmi ca2
+- docker rmi $(docker image ls)
+
+How to delete all stopped containers
+- docker system prune --all
+
+How to delete all the container in all status
+- docker rm -f $(docker ps -a)
+
+How to check the resources allocated for the running container
+- docker stats
+
+How to check the space taken by the image
+- df -h (overlay is the filesystem)
+
+How to stop the container
+- docker stop 478
+
+How to start a containe
+- docker start ub2 (container name)
+
+How to remove container 
+- docker rm 242
+
+How to get the IP address of the container
+- docker inspect ubuntu
+
+How to get image info
+- docker inspect ubuntu
+- docker history ubuntu
+
+How to list the running image process:
+- docker ps -a
+
+How to check running container:
+- docker container ls
+
+How to check containers in all status:
+- docker container ls -a
+
+How to create volume and attach to container folder
+- docker volume create my_vol
+- cd /var/lib/docker/volumes/my_vol/_data/
+- docker volume inspect my_vol
+- docker volume ls
+- docker run --name ub3 -it -v my_vol:/tmp ubuntu (Attach the volume to docker folder)
+- touch 1.log
+- ctrl+pq
+- ls /var/lib/docker/volumes/my_vol/_data/
+
+NOTE: If container is deleted and new container is created with the same volume, the files will be available under /tmp
+
+
+How to attach a file to a container
+- cd /var/lib/docker/volumes/my_vol/_data/ (this is a volume)
+- docker attach ub4 (any in above folder will be attached to the container name ub4)
+
+How to remove volume?
+- docker volume rm my_vol
+
+How to share data between containers
+
+- docker volume create my_vol1
+- docker volume inspect my_vol1
+- ls -ltr /var/lib/docker/volumes/my_vol1/_data/
+- docker run -it --name c1 -v my_vol1:/home ubuntu
+- cd home
+- touch c1.log
+- come out of container
+- ls -ltr /var/lib/docker/volumes/my_vol1/_data/
+- docker run -it --name c2 -v my_vol1:/home ubuntu
+- cd home
+- touch c2.log
+- come out of container
+- ls -ltr /var/lib/docker/volumes/my_vol1/_data/ (Both c1 and c2 file will be available)
+- touch /var/lib/docker/volumes/my_vol1/_data/common_2_c1_c2.log
+- docker attach c1
+- ls /home (docker host created file will be available in c1)
+- come out
+- docker attach c2
+- ls /home (docker host created file will be available in c2)
+- come
+
+***********BIND MOUNTS**************************
+Second type of volume. Data is not preserved in docker are (/var/lib/docker)
+Container data can be stored in any directory
+Volume will not have any name
+
+mkdir -p /root/dockDir
+cd /root/dockDir
+touch 1.log
+docker run -it --name c3 -v /root/dockDir:/tmp ubuntu
+cd tmp
+ls -ltr 1.log
+ctrl+pq

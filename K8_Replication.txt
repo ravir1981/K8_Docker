@@ -1,0 +1,66 @@
+EXAMPLE OF REPLICATION CONTROLLER
+
+kind: ReplicationController ==> This defines the creation of an object.           
+apiVersion: v1
+metadata:
+  name: myreplica
+spec:
+  replicas: 2    			==> This element defines the desired number of PODs.        
+  selector:      			==> This elemetn tells the controller which PODs to watch.   
+    myname: RCTest 			==> This label must be matched with the labels of the POD, whose replica needs to be created.                           
+  template:          		==> This element defines a template to launch a new POD      
+    metadata:
+      name: testpod6
+      labels:            
+        myname: RCTest 		==> If this label matches the selector label, then ReplicatorController will create two replicas of this POD.
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Learning ReplicationController; sleep 5 ; done"]
+
+kind: ReplicationController      
+apiVersion: v1
+metadata:
+  name: myreplica
+spec:
+  replicas: 5  			       
+  selector:      			
+    myname: RCTest 			                      
+  template:          		
+    metadata:
+      labels:            
+        myname: RCTest 	
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Learning ReplicationController; sleep 5 ; done"]
+
+=======
+
+EXAMPLE OF REPLICA SET
+
+
+kind: ReplicaSet                                    
+apiVersion: apps/v1                            
+metadata:
+  name: myrepset
+spec:
+  replicas: 2  
+  selector:                  
+    matchExpressions:                             
+      - {key: env, operator: In, values: [test, preprod, prod]}
+  template:      
+    metadata:
+      name: Replicasetpod
+      labels:              
+        env: preprod
+    spec:
+     containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Learning ReplicaSet; sleep 5 ; done"]
+
+===========
+

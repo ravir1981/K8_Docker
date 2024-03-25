@@ -1,0 +1,225 @@
+root@ip-172-31-36-11:/home/ubuntu/test# cat emptydir.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emptydirvol
+spec:
+  containers:
+  - name: c00
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 12000"]
+    volumeMounts:                                    # Mount definition inside the container
+      - name: testvol
+        mountPath: "/tmp/test"
+  - name: c02
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 10000"]
+    volumeMounts:
+      - name: testvol
+        mountPath: "/tmp/data"
+  volumes:
+  - name: testvol
+    emptyDir: {}
+root@ip-172-31-36-11:/home/ubuntu/test#
+root@ip-172-31-36-11:/home/ubuntu/test# cat emptydirrepl.yml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: emptydirvol
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment
+         spec:
+           containers:
+           - name: c00
+             image: centos
+             command: ["/bin/bash", "-c", "sleep 12000"]
+             volumeMounts:                                    # Mount definition inside the container
+             - name: testvol
+               mountPath: "/tmp/test"
+           - name: c02
+             image: centos
+             command: ["/bin/bash", "-c", "sleep 10000"]
+             volumeMounts:
+             - name: testvol
+               mountPath: "/tmp/data"
+      volumes:
+      - name: testvol
+      emptyDir: {}
+root@ip-172-31-36-11:/home/ubuntu/test#
+root@ip-172-31-36-11:/home/ubuntu/test#
+root@ip-172-31-36-11:/home/ubuntu/test# cat deployments.yml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+   name: mydeployments
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          command: ["/bin/bash", "-c", "sleep 12000"]
+          volumeMounts:
+              - name: testvol
+                mountPath: "/tmp/test"
+      volumes:
+      - name: testvol
+        emptyDir: {}
+
+root@ip-172-31-36-11:/home/ubuntu/test#
+root@ip-172-31-36-11:/home/ubuntu/test#
+root@ip-172-31-36-11:/home/ubuntu/test# cat hostpath.yml
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+   name: mydeployments
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          command: ["/bin/bash", "-c", "sleep 12000"]
+          volumeMounts:
+              - name: testvol
+                mountPath: "/tmp/test"
+      volumes:
+      - name: testvol
+        hostPath:
+          path: /tmp/data
+
+
+============
+============
+
+
+ Start Minikube
+$  apt install conntrack
+$  minikube start --vm-driver=none
+$  minikube status
+=================================
+KUBERNETES NETWORKING
+=================================
+kind: Pod
+apiVersion: v1
+metadata:
+  name: testpod
+spec:
+  containers:
+    - name: c00
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Learning NETWORKING; sleep 5 ; done"]
+    - name: c01
+      image: httpd
+      ports:
+       - containerPort: 80
+================
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+   name: mydeployments
+spec:
+   replicas: 1
+   selector:      # tells the controller which pods to watch/belong to
+    matchLabels:
+     name: deployment
+   template:
+     metadata:
+       name: testpod1
+       labels:
+         name: deployment
+     spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+          - containerPort: 80
+====================
+kind: Service                             # Defines to create Service type Object
+apiVersion: v1
+metadata:
+  name: demoservice
+spec:
+  ports:
+    - port: 80                               # Containers port exposed
+      targetPort: 80                     # Pods port
+  selector:
+    name: deployment                    # Apply this service to any pods which has the specific label
+  type: ClusterIP                       # Specifies the service type i.e ClusterIP or NodePort
+
+$ kubectl get svc
+
+
+===========================
+volume labs
+===========================
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolemptydir
+spec:
+  containers:
+  - name: c1
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 15000"]
+    volumeMounts:                                    # Mount definition inside the container
+      - name: xchange
+        mountPath: "/tmp/xchange"          
+  - name: c2
+    image: centos
+    command: ["/bin/bash", "-c", "sleep 10000"]
+    volumeMounts:
+      - name: xchange
+        mountPath: "/tmp/data"
+  volumes:                                                   
+  - name: xchange
+    emptyDir: {}
+
+
+========================
+HOST PATH
+========================
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolhostpath
+spec:
+  containers:
+  - image: centos
+    name: testc
+    command: ["/bin/bash", "-c", "sleep 15000"]
+    volumeMounts:
+    - mountPath: /tmp/hostpath
+      name: testvolume
+  volumes:
+  - name: testvolume
+    hostPath:
+      path: /tmp/data 

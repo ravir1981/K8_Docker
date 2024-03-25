@@ -1,0 +1,116 @@
+Labels and Selectors
+==============
+
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: labeltestpod
+  labels:                                                   
+    env: development
+    class: pods
+	depart: test
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Learning Labels & Selector; sleep 4 ; done"]
+
+kubectl apply -f <pod.yml>
+kubectl get pods --show-labels
+
+Assigning new label to existing pod (Imperative method):
+kubectl label pods labeltestpod Company=Techstart
+kubectl label pods mypod region=us-east-1
+
+kubectl get pods --show-labels
+
+Now, list pods matching a label
+kubectl get pods -l env=development
+kubectl get pods -l env!=development
+kubectl delete pod -l env!=development
+kubectl get pods
+
+
+Equality Based: ( =, !=)
+
+Set Based: ( in, notin and exists)
+
+env in (production, dev)
+env notin ( class1, class2)
+
+kubectl get pods -l 'env in (dev, testing)'
+kubectl get pods -l 'env notin (dev, testing)'
+kubectl get pods -l class=pods, Company=Techstart
+
+Deleting a POD using label:
+kubectl delete pods -l 'region in (us-east-1,us-east-2)'
+
+EXAMPLE OF LABELS
+
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: 
+  labels:                                                   
+    env: 
+    class: pods
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Learning Labels & Selectors; sleep 5 ; done"]
+
+
+
+***************************************************************************
+NODE SELECTOR EXAMPLE
+
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nodelabels
+  labels:
+    env: development
+spec:
+    containers:
+       - name: c00
+         image: ubuntu
+         command: ["/bin/bash", "-c", "while true; do echo Learning Node Selector; sleep 5 ; done"]
+    nodeSelector:     ##### Corresponding label for node should be available                                    
+       hardware: t2-medium
+       
+kubectl get pods
+kubectl describe pod nodelabels
+kubectl get nodes
+kubectl label nodes ip-172-31-82-92 hardware=t2-medium
+kubectl get pods
+kubectl describe pod nodelabels
+***********************************************************************************
+root@ip-172-31-82-92:/home/ubuntu/test# cat nginx-depl.yaml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        
+kubectl get deployments
+kubectl get pods
+kubectl get pods --selectors app=my-app
+
+*****************************************************************************************************
