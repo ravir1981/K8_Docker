@@ -103,6 +103,7 @@ How to attach a file to a container
 How to remove volume?
 - docker volume rm my_vol
 
+****************************************************************************
 How to share data between containers
 
 - docker volume create my_vol1
@@ -138,3 +139,38 @@ docker run -it --name c3 -v /root/dockDir:/tmp ubuntu
 cd tmp
 ls -ltr 1.log
 ctrl+pq
+
+
+*******************How to deploy git web app in docker***********************
+git clone https://github.com/ravir1981/ecomm.git
+docker run -d --name web -P -v /root/ecomm:/usr/local/apache2/htdocs/ httpd
+docker ps -a (to get the port)
+connect to 54.209.76.56:32769
+
+NOTE: By default it's read write
+if you want to restrict the container right access, we can give like this. Only volume can write to container.
+
+docker run -d --name web -v /root/dockDir:/tmp:ro ubuntu
+*******************************CREATE CUSTOM IMAGE**********************************
+docker run -it --name myc1 ubuntu
+apt-get update
+apt-get install git -y
+echo "Test container updated with a temp file and git" >> 1.log
+ctrl+pq
+docker ps -a
+docker stop myc1
+docker rm myc1
+docker rmi ubuntu
+docker run -it --name myc1 myc1
+ls -ltr 1.log
+git --version
+ctrl+pq
+*********************************************************************************
+How to push an image to docker hub?
+
+docker tag myc1 ravir/myubuntu
+docker login
+ravir81
+<passwd>
+docker push ravir81/myubuntu
+****************************************************************
