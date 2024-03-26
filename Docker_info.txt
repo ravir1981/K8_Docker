@@ -157,6 +157,7 @@ apt-get update
 apt-get install git -y
 echo "Test container updated with a temp file and git" >> 1.log
 ctrl+pq
+docker commit c1 myc1
 docker ps -a
 docker stop myc1
 docker rm myc1
@@ -173,4 +174,95 @@ docker login
 ravir81
 <passwd>
 docker push ravir81/myubuntu
-****************************************************************
+******************************USING DOCKERFILE - Example 1**********************************
+cat dockerfile 
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install git -y
+RUN apt-get install tree -y
+RUN mkdir test_dir
+
+docker build -t image1 .
+docker history image1
+docker run -it --name c1 image1
+ls -ltr (to verify test_dir)
+git --version
+tree --version
+ctrl+pq
+docker ps -a
+docker image ls
+******************************USING DOCKERFILE - Example 2***********************************
+cat dockerfile 
+FROM busybox
+COPY file1 /tmp
+ADD file2 /tmp
+ADD compress.tar.gz /tmp
+RUN ls -ltr /tmp
+[root@Docker dockerfile]# 
+
+touch file1 file2 compress.txt
+tar -cvf compress.tar.gz compress.txt
+
+docker build -t image2 .
+docker run -it --name c2 image2
+ls -ltr /tmp
+ctrl+pq
+**********************************************************************************************
+How to touch multiple files in one liner:
+touch test{001..004}.txt
+rm -f test{001..004}.txt
+*********************************USING DOCKERFILE - Example 3 Deploying nginx server***********************************************************
+cat dockerfile 
+FROM ubuntu
+RUN apt-get update
+RUN apt-get install nginx -y
+COPY index.html /var/www/html/
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+[root@DOCKER dockerfile]# 
+
+CMD -> default command which runs in container always
+ENTRYPOINT -> takes precedence on CMD. But we can add additional command along with this.
+
+ls -ltr index.html
+docker build -t image1 .
+docker ps -a
+docker run -d --name web -p 8282:80 image1
+http://54.80.184.121:8282/ (to access the nginx server deployed. Use EC2 public ip + port)
+****************************************USING DOCKERFILE - Example 4******************************************************
+Run a busybox container
+Get the IP address
+Create a dockerfile for monitoring image and pass the ip address
+
+cat dockerfile 
+FROM busybox
+HEALTHCHECK --interval=5s CMD ping -c 1 172.17.0.2
+[root@DOCKER dockerfile]#
+
+docker build -t monitor .
+docker image ls
+docker run -itd --name monitoring monitor
+docker ps -a
+docker inspect 043
+**************************************USING DOCKERFILE - Example 5**************************************************************
+Clone the git repo in docker host
+git clone https://github.com/Sonal0409/nodejsappDockerfile.git
+
+cat dockerfile 
+FROM node
+
+WORKDIR /app
+
+COPY . /app
+RUN npm install
+EXPOSE 80
+CMD ["node", "server.js"]
+[root@DOCKER nodejsappDockerfile]# 
+
+docker build -t nodejob .
+docker run -d --name web -P nodejob
+docker ps -a
+
+
+http://54.80.184.121:32768/
+**********************************************************************************************
